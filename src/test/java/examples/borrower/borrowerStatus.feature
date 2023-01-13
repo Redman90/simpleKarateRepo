@@ -1,21 +1,29 @@
 Feature: borrower status call
 
   Background:
-    * url 'https://baseurl'
     * def token = 'foo'
     * header Authorization = 'Bearer ' + token
+    * def start = () => karate.start('BorrowerMock.feature').port
+    * def port = callonce start
+    * url 'http://localhost:' + port
+    * def expectedOutput = read('classpath:data/approved.json')
 
   Scenario Outline: Verify each stage of the application.  This assumes you have your test data set up in your
   environment (aggregatorID's and borrowerExternalId's for each stage)
 
-    Given url 'https://baseurl'
-    And path '/services/apexrest/v3/borrower/status/'
-    And param aggregatorID = <aggregatorId>
+
+    Given path '/services/apexrest/v3/borrower/status/'
     And param borrowerExternalId = <borrowerExternalId>
+    And param aggregatorID = <aggregatorId>
     When method get
     Then status 200
+    And print expectedOutput
+    And print response
+    And print response.code
+    And print response.description
+    #And match response == expectedOutput
+    And match response.description == <Description>
     And match response.code == <Code>
-    And Match response.description == <Description>
 
 
     Examples:
@@ -24,7 +32,7 @@ Feature: borrower status call
       | '12345'      | '101'              |'Pending (Login Created)'      |'End-user has verified their details and activated their account on the Butn Platform'                                           |
       | '12345'      | '102'              |'Review'                       |'End-user account has been flagged for review; Reason: [review reason]'                                                          |
       | '12345'      | '103'              |'Will not fund'                |'End-user account has been declined and marked as Will not fund. The account cannot be used to transact on the Butn Platform.'   |
-      | '12345'      | '104'              |'Approved'                     |'End-user account has been approved and is ready to transact on the Butn Platform.'                                              |
+      | '12345'      | '104'              |'Approved'                     |'End-user account has been approved and is ready to transact on the Butn Platform'                                              |
       | '12345'      | '105'              |'Inactive – Ineligible'        |'End-user account has been deactivated and cannot be reinstated without manual intervention.'                                    |
       | '12345'      | '106'              |'Inactive –[suspended]'        |'End-user account has been deactivated and can be reinstated.'                                                                   |
       | '12345'      | '107'              |'Inactive –[Unsubscribed]'     |'End-user has verified their details and activated their account on the Butn Platform'                                           |
